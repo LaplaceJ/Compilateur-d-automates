@@ -1,0 +1,79 @@
+/* Fichier exAtt.acc */
+
+%prelude{ /* Code C */
+   /* Inclusion de bibliotheques C */
+   #include <stdio.h>
+   #include <malloc.h>
+   #include "yystype.h"
+   
+   /* Action de fin d analyse */
+   void fin_analyse(int nbEntiers){
+        printf("Syntaxe correcte\n");
+        printf("Nombre d'entier %d\n",nbEntiers);
+   }
+}
+
+/* Declaration des tokens */
+%token ENTETE,    
+ATT_VERSION ,
+ATT_ENCODING,
+VALEUR_VERSION,
+ATT_UTF,
+VALEUR_REF,
+fENTETE,
+oBALISE_SCXML ,
+ATT_XMLNS,
+ATT_INIT,
+fBALISE_SCXML ,
+oBALISE_STATE,
+ATT_ID,
+ATT_FINAL,
+fBALISE_STATE ,
+oBALISE_TRANSITION,
+ATT_EVENT,    
+ATT_TARGET,  
+fBALISE_TRANSITION,
+BALISEf, 
+BOOLEAN,
+EGALE,
+IDENTIFIANT,
+TRUE,
+FALSE;
+
+// Grammaire
+E :  ENTETE ATT_VERSION EGALE VALEUR_VERSION ATT_ENCODING EGALE ATT_UTF fENTETE F
+    |ENTETE ATT_ENCODING EGALE ATT_UTF ATT_VERSION EGALE VALEUR_VERSION  fENTETE F
+;
+
+F : oBALISE_SCXML ATT_XMLNS EGALE VALEUR_REF  INIT BALISEf STA <STA_eta , STA_fin , STA_arcs>  fBALISE_SCXML BALISEf {printf("\n Nombre total d'etats : %d  \n Nombre d'etats finaux : %d \n Nombre total d'arc(s) : %d \n",STA_eta,STA_fin,STA_arcs); }
+  | oBALISE_SCXML  INIT ATT_XMLNS EGALE VALEUR_REF BALISEf STA <STA_eta , STA_fin , STA_arcs>  fBALISE_SCXML BALISEf {printf("\n Nombre total d'etats : %d  \n Nombre d'etats finaux : %d \n Nombre total d'arc(s) : %d \n",STA_eta,STA_fin,STA_arcs); }
+;
+
+INIT : ATT_INIT EGALE  IDENTIFIANT <val>  {printf("Etat initial : %s",val.id);}
+;
+
+STA <%out int STA_eta , int STA_fin , int STA_arcs> : oBALISE_STATE  ID  FINAL<bool>  { if(bool) printf(": Etat final"); } BALISEf TRANS <TRA_nbArc> fBALISE_STATE BALISEf {printf("\n\t Nombre d'arc(s) : %d \n ",TRA_nbArc);}
+STA <STA1_eta , STA1_fin , STA1_arcs> {*STA_arcs = STA1_arcs + TRA_nbArc ; *STA_eta = STA1_eta + 1 ; if (bool) *STA_fin = STA1_fin  +1 ; else *STA_fin = STA1_fin  ;   }
+
+    | oBALISE_STATE  FINAL <bool> ID  { if(bool) printf(": Etat final");  } BALISEf TRANS <TRA_nbArc>  fBALISE_STATE BALISEf {printf("\n\t Nombre d'arc(s) : %d \n ",TRA_nbArc);}  STA <STA1_eta , STA1_fin , STA1_arcs> {*STA_arcs = STA1_arcs + TRA_nbArc ; *STA_eta = STA1_eta + 1 ; 
+     if (bool) *STA_fin = STA1_fin + 1   ; else *STA_fin = STA1_fin   ;   }
+    | {*STA_eta = 0 ; *STA_fin = 0 ; *STA_arcs = 0 ; }
+;
+
+ID : ATT_ID EGALE  IDENTIFIANT  <val>  {printf("\n\n\t Etat %s",val.id);}
+;
+FINAL <%out int bool> : ATT_FINAL EGALE  TRUE  {*bool = 1 ; }
+      | ATT_FINAL EGALE  FALSE  {*bool = 0 ; }
+      | {*bool = 0 ; }
+;
+
+TRANS < %out int  TRA_nbArc > : oBALISE_TRANSITION  EVENT TARGET fBALISE_TRANSITION TRANS <TRA1_nbArc > {*TRA_nbArc = TRA1_nbArc +1;}
+  |oBALISE_TRANSITION  TARGET EVENT  fBALISE_TRANSITION  TRANS < TRA1_nbArc > {*TRA_nbArc = TRA1_nbArc +1;}
+  | {*TRA_nbArc = 0 ;}
+;
+
+EVENT : ATT_EVENT EGALE  IDENTIFIANT <val>  {printf("\n\t\tArc : Etiquette %s - Etat ",val.id);}
+;
+
+TARGET : ATT_TARGET EGALE  IDENTIFIANT <val>  {printf("%s",val.id);}
+;

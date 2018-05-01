@@ -1,0 +1,82 @@
+/* Fichier exAtt.acc */
+
+%prelude{ /* Code C */
+   /* Inclusion de bibliotheques C */
+   #include <stdio.h>
+   #include <stdlib.h>
+   #include "yystype.h"
+   #include "etats.h"   
+   #include <string.h>
+
+   tabEtats tabE ; 
+
+   
+
+ 
+
+}
+
+/* Declaration des tokens */
+%token ENTETE,    
+ATT_VERSION ,
+ATT_ENCODING,
+VALEUR_VERSION,
+ATT_UTF,
+VALEUR_REF,
+fENTETE,
+oBALISE_SCXML ,
+ATT_XMLNS,
+ATT_INIT,
+fBALISE_SCXML ,
+oBALISE_STATE,
+ATT_ID,
+ATT_FINAL,
+fBALISE_STATE ,
+oBALISE_TRANSITION,
+ATT_EVENT,    
+ATT_TARGET,  
+fBALISE_TRANSITION,
+BALISEf, 
+EGALE,
+IDENTIFIANT,
+TRUE,
+FALSE;
+
+// Grammaire   // erreur d'affichage des étiquettes
+E :  ENTETE ATT_VERSION EGALE VALEUR_VERSION ATT_ENCODING EGALE ATT_UTF fENTETE  { initTable(&tabE);} F { afficherTable(tabE);}
+  | ENTETE  ATT_ENCODING EGALE ATT_UTF  ATT_VERSION EGALE VALEUR_VERSION fENTETE  { initTable(&tabE);} F { afficherTable(tabE);}
+
+;
+
+
+F : oBALISE_SCXML ATT_XMLNS EGALE VALEUR_REF  INIT <INIT_nom>  BALISEf STA  fBALISE_SCXML BALISEf {definirEtatInitial(&tabE, INIT_nom);}
+  | oBALISE_SCXML   INIT <INIT_nom> ATT_XMLNS EGALE VALEUR_REF BALISEf STA  fBALISE_SCXML BALISEf {definirEtatInitial(&tabE, INIT_nom);}
+;
+
+INIT <%out chaineC INIT_nom>: ATT_INIT EGALE  IDENTIFIANT <val>  { strcpy( INIT_nom , val.id) ;}
+;
+
+STA : oBALISE_STATE  ID <id_nom> FINAL <bool> BALISEf {  insererEtat( &tabE , id_nom) ; strcpy( nomEtat , id_nom) ;if(bool) definirEtatFinal( &tabE , id_nom) ; }  TRANS <nomEtat> fBALISE_STATE BALISEf STA   
+    | oBALISE_STATE  FINAL <bool> ID <id_nom> BALISEf { insererEtat( &tabE , id_nom) ; strcpy( nomEtat , id_nom) ; if(bool) definirEtatFinal( &tabE , id_nom) ;}  TRANS <nomEtat> fBALISE_STATE BALISEf STA 
+    |
+;
+
+ID <%out chaineC id_nom>: ATT_ID EGALE  IDENTIFIANT  <val>  {strcpy( id_nom , val.id); }
+;
+
+FINAL <%out int bool> : ATT_FINAL EGALE  TRUE {*bool = 1 ; } 
+      | ATT_FINAL EGALE  FALSE  {*bool = 0 ;     } 
+      | ATT_FINAL EGALE IDENTIFIANT {yyerror("l'attribut final de la balise state doit avoir pour valeur soit true, soit false");}
+      | {*bool = 0 ; } 
+;
+
+TRANS <%in chaineC nomEtat> : oBALISE_TRANSITION  EVENT <EV_val>  TARGET <TAR_val>  fBALISE_TRANSITION  {insererArc(&tabE  , nomEtat , TAR_val  ,EV_val  ); strcpy( nomEtat1 , nomEtat) ;   } TRANS <nomEtat1>
+  |oBALISE_TRANSITION   TARGET <TAR_val> EVENT <EV_val>   {insererArc(&tabE  , nomEtat , TAR_val  ,EV_val ) ; strcpy( nomEtat1 , nomEtat) ;  } fBALISE_TRANSITION TRANS <nomEtat1>
+  |
+;
+
+EVENT <%out chaineC EV_val>: ATT_EVENT EGALE  IDENTIFIANT <val>   { strcpy( EV_val , val.id) ;}
+;
+
+TARGET <%out chaineC TAR_val> : ATT_TARGET EGALE  IDENTIFIANT <val>  { strcpy( TAR_val , val.id) ;}
+;

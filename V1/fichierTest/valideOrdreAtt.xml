@@ -1,0 +1,24 @@
+<?xml encoding="UTF-8" version="1.0" ?>
+<scxml initial="s1" xmlns="http://www.w3.org/2005/07/scxml" >
+ 
+ <state id="s1">
+   <transition target="s1" event="a"  />
+   <transition event="b" target="s2" />
+   <transition event="a" target="s4" />
+ </state>
+ <state id="s2">
+   <transition event="c" target="s3" />
+   <transition event="e" target="s5" />
+ </state>
+ <state id="s3">
+   <transition event="d" target="s4" />
+ </state>
+ <state final="true" id="s4" >
+ </state>
+ <state id="s5">
+   <transition event="a" target="s6" />
+ </state>
+ <state id="s6" final="true">
+   <transition event="a" target="s4" />
+ </state>
+</scxml>
